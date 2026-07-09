@@ -25,9 +25,12 @@ export async function getStaff() {
 
 export async function getClients() {
   if (!isSupabaseConfigured) return D(demo.CLIENTS)
-  const { data } = await supabase.from('clients').select('id,name,phone').order('name')
+  const { data } = await supabase.from('clients').select('id,name,phone,email,notes,tags').order('name')
   const palette = ['#0FA06F', '#7C6FD0', '#3D94C9', '#D9657A', '#E8951F', '#5C7488', '#0B7E58', '#b5740f']
-  return (data || []).map((c: any, i: number) => ({ ...c, color: palette[i % palette.length], since: 2023 }))
+  return (data || []).map((c: any, i: number) => ({
+    ...c, color: palette[i % palette.length], since: 2023,
+    tags: c.tags || [], notes: c.notes || '', email: c.email || '',
+  }))
 }
 
 export async function getServices() {
@@ -119,12 +122,35 @@ export async function getOrgId() {
 
 export async function createClientRow(name: string, phone: string) {
   if (!isSupabaseConfigured) {
-    demo.CLIENTS.push({ id: 'n' + Date.now(), name, phone, since: new Date().getFullYear(), color: '#0FA06F' })
+    demo.CLIENTS.push({ id: 'n' + Date.now(), name, phone, email: '', since: new Date().getFullYear(), color: '#0FA06F', notes: '', tags: [] })
     return { ok: true }
   }
   const org = await getOrgId()
   const { error } = await supabase.from('clients').insert({ org_id: org, name, phone })
   return { ok: !error, error: error?.message }
+}
+
+export async function updateClientNotes(clientId: string, notes: string, email: string, tags: string[]) {
+  if (!isSupabaseConfigured) {
+    const c = demo.CLIENTS.find((x) => x.id === clientId)
+    if (c) { c.notes = notes; c.email = email; c.tags = tags }
+    return { ok: true }
+  }
+  const { error } = await supabase.from('clients').update({ notes, email, tags }).eq('id', clientId)
+  return { ok: !error, error: error?.message }
+}
+
+export async function getVisitNotes(): Promise<Record<string, string>> {
+  if (!isSupabaseConfigured) return D({ ...demo.VISIT_NOTES })
+  return {}
+}
+
+export async function saveVisitNote(apptId: string, note: string) {
+  if (!isSupabaseConfigured) {
+    demo.VISIT_NOTES[apptId] = note
+    return { ok: true }
+  }
+  return { ok: true }
 }
 
 export async function createAppointment(a: {

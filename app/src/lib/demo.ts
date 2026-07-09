@@ -26,16 +26,22 @@ export const SERVICES = [
   { id: 'sv7', name: 'Brow Lamination', dur: 45, price: { lay: 8500, leh: 8500, sld: 10000 }, cat: 'Skin' },
 ]
 
-export const CLIENTS = [
-  { id: 'c1', name: 'Hannah Brooks', phone: '(801) 555-0142', since: 2022, color: '#0FA06F' },
-  { id: 'c2', name: 'Olivia Chen', phone: '(801) 555-0198', since: 2023, color: '#7C6FD0' },
-  { id: 'c3', name: 'Marcus Webb', phone: '(385) 555-0167', since: 2021, color: '#3D94C9' },
-  { id: 'c4', name: 'Sofia Ramirez', phone: '(801) 555-0123', since: 2024, color: '#D9657A' },
-  { id: 'c5', name: 'Tyler Nguyen', phone: '(385) 555-0211', since: 2023, color: '#E8951F' },
-  { id: 'c6', name: 'Grace Liu', phone: '(801) 555-0156', since: 2022, color: '#5C7488' },
-  { id: 'c7', name: 'Ethan Park', phone: '(801) 555-0188', since: 2024, color: '#0B7E58' },
-  { id: 'c8', name: 'Isabella Moore', phone: '(385) 555-0144', since: 2021, color: '#b5740f' },
+export const CLIENTS: any[] = [
+  { id: 'c1', name: 'Hannah Brooks', phone: '(801) 555-0142', email: 'hannah.brooks@gmail.com', since: 2022, color: '#0FA06F', notes: 'Prefers morning appointments. Sensitive to certain keratin treatments — confirm products first. Loves chai lattes.', tags: ['VIP'] },
+  { id: 'c2', name: 'Olivia Chen', phone: '(801) 555-0198', email: 'olivia.chen@icloud.com', since: 2023, color: '#7C6FD0', notes: 'Very particular about color temperature — always cool/ashy, never warm.', tags: ['VIP'], membership: 'VIP Monthly' },
+  { id: 'c3', name: 'Marcus Webb', phone: '(385) 555-0167', email: 'marcus.webb@outlook.com', since: 2021, color: '#3D94C9', notes: 'Canceled membership Jan 2026. Good reactivation candidate — ask about returning to monthly plan.', tags: ['Lapsed'] },
+  { id: 'c4', name: 'Sofia Ramirez', phone: '(801) 555-0123', email: '', since: 2024, color: '#D9657A', notes: '', tags: ['New Client'] },
+  { id: 'c5', name: 'Tyler Nguyen', phone: '(385) 555-0211', email: 'tyler.nguyen@gmail.com', since: 2023, color: '#E8951F', notes: '', tags: ['VIP'], membership: 'VIP Monthly' },
+  { id: 'c6', name: 'Grace Liu', phone: '(801) 555-0156', email: 'grace.liu@gmail.com', since: 2022, color: '#5C7488', notes: 'Sensitive scalp — no ammonia, fragrance-free formulas only. Always patch test.', tags: ['Allergy Note'] },
+  { id: 'c7', name: 'Ethan Park', phone: '(801) 555-0188', email: '', since: 2024, color: '#0B7E58', notes: '', tags: [] },
+  { id: 'c8', name: 'Isabella Moore', phone: '(385) 555-0144', email: 'isabella.m@gmail.com', since: 2021, color: '#b5740f', notes: 'Prefers late afternoons. Always books brow services with Priya — do not reassign without asking.', tags: [] },
 ]
+
+export let VISIT_NOTES: Record<string, string> = {
+  'a1': "Women's Cut & Style — trimmed 1.5 in, added textured layers. Growing out bangs. Next visit: check-in on growth, may add curtain bangs.",
+  'a2': "Full highlights — Wella 10/0 base, bleach on foils. Toner: T18 + T10 1:1, 20vol, 15 min. Client very happy. Go slightly ashier next time.",
+  'd1': "Signature Facial — Hydra Boost serum + collagen mask. Mild congestion around nose, light redness post-treatment (resolved). No adverse reactions.",
+}
 
 export const APPTS = [
   { id: 'a1', locId: 'lay', clientId: 'c1', staffId: 's1', svcId: 'sv1', h: 9, m: 0, status: 'paid' },
