@@ -2,6 +2,7 @@ export type App = { id: string; name: string; group: 'core' | 'mkt' | 'setup' }
 
 export const APPS: App[] = [
   { id: 'calendar', name: 'Calendar', group: 'core' },
+  { id: 'schedule', name: 'Schedule', group: 'core' },
   { id: 'clients', name: 'Clients', group: 'core' },
   { id: 'sales', name: 'Sales', group: 'core' },
   { id: 'inbox', name: 'Inbox', group: 'core' },

@@ -113,3 +113,64 @@ export const CONVOS = [
   { client: 'Hannah Brooks', last: 'Perfect, see you at 9! Thank you', time: '9:02a', unread: false, color: '#0FA06F' },
   { client: 'Marcus Webb', last: 'Thanks for the massage, felt great.', time: 'Mon', unread: false, color: '#3D94C9' },
 ]
+
+// ---- Scheduler demo data ----
+
+// Per-staff recurring availability restrictions. No row = fully available that day.
+// day_of_week: 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
+// start_min / end_min: minutes from midnight (null = store open/close)
+export const STAFF_AVAILABILITY: any[] = [
+  // Maya (s1): Wednesdays only after 1pm (780 min), Fridays completely off
+  { id: 'av1', staffId: 's1', dayOfWeek: 3, isAvailable: true, startMin: 780, endMin: null },
+  { id: 'av2', staffId: 's1', dayOfWeek: 5, isAvailable: false, startMin: null, endMin: null },
+]
+
+// Per-staff schedule constraint rules
+export const SCHEDULE_RULES: any[] = [
+  { id: 'r1', staffId: 's1', ruleType: 'max_hours_week', value: 25 },   // Maya: max 25h/wk
+  { id: 'r2', staffId: 's3', ruleType: 'min_hours_week', value: 30 },   // Priya: min 30h/wk
+  { id: 'r3', staffId: 's2', ruleType: 'max_hours_week', value: 40 },   // Jordan: max 40h/wk
+]
+
+// Scheduled shifts for the week of 2026-07-07 (Mon) at Layton store
+// Maya total: 9+9+5+8 = 31h → over 25h max (shows violation badge)
+// Priya total: 8+8 = 16h → under 30h min (shows violation badge)
+export const SHIFTS: any[] = [
+  { id: 'sh1', orgId: 'demo', storeId: 'lay', staffId: 's1', shiftDate: '2026-07-07', startMin: 600, endMin: 1140, notes: '' }, // Maya Mon 10am-7pm
+  { id: 'sh2', orgId: 'demo', storeId: 'lay', staffId: 's1', shiftDate: '2026-07-08', startMin: 600, endMin: 1140, notes: '' }, // Maya Tue 10am-7pm
+  { id: 'sh3', orgId: 'demo', storeId: 'lay', staffId: 's1', shiftDate: '2026-07-09', startMin: 780, endMin: 1080, notes: '' }, // Maya Wed 1pm-6pm
+  { id: 'sh4', orgId: 'demo', storeId: 'lay', staffId: 's1', shiftDate: '2026-07-10', startMin: 600, endMin: 1080, notes: '' }, // Maya Thu 10am-6pm
+  { id: 'sh5', orgId: 'demo', storeId: 'lay', staffId: 's2', shiftDate: '2026-07-07', startMin: 600, endMin: 1080, notes: '' }, // Jordan Mon 10am-6pm
+  { id: 'sh6', orgId: 'demo', storeId: 'lay', staffId: 's2', shiftDate: '2026-07-08', startMin: 600, endMin: 1080, notes: '' }, // Jordan Tue 10am-6pm
+  { id: 'sh7', orgId: 'demo', storeId: 'lay', staffId: 's3', shiftDate: '2026-07-07', startMin: 600, endMin: 1080, notes: '' }, // Priya Mon 10am-6pm
+  { id: 'sh8', orgId: 'demo', storeId: 'lay', staffId: 's3', shiftDate: '2026-07-08', startMin: 600, endMin: 1080, notes: '' }, // Priya Tue 10am-6pm
+]
+
+// Time-off entries overlapping this week — Jordan has Thursday off
+export const TIME_OFF_DEMO: any[] = [
+  { id: 'to1', staffId: 's2', startDate: '2026-07-10', endDate: '2026-07-10', reason: 'Personal day' },
+]
+
+// Appointment counts per staff per day (for shift density display)
+export const APPT_COUNTS_DEMO: { staffId: string; shiftDate: string; count: number }[] = [
+  { staffId: 's1', shiftDate: '2026-07-07', count: 4 },
+  { staffId: 's1', shiftDate: '2026-07-08', count: 6 },
+  { staffId: 's1', shiftDate: '2026-07-09', count: 2 },
+  { staffId: 's1', shiftDate: '2026-07-10', count: 5 },
+  { staffId: 's2', shiftDate: '2026-07-07', count: 3 },
+  { staffId: 's2', shiftDate: '2026-07-08', count: 5 },
+  { staffId: 's3', shiftDate: '2026-07-07', count: 4 },
+  { staffId: 's3', shiftDate: '2026-07-08', count: 3 },
+  { staffId: 's4', shiftDate: '2026-07-08', count: 2 },
+  { staffId: 's4', shiftDate: '2026-07-10', count: 4 },
+]
+
+// Total appointment volume per day at the store (for day header indicators)
+export const DAY_VOLUMES_DEMO: { shiftDate: string; count: number }[] = [
+  { shiftDate: '2026-07-07', count: 12 },
+  { shiftDate: '2026-07-08', count: 18 },
+  { shiftDate: '2026-07-09', count: 9 },
+  { shiftDate: '2026-07-10', count: 15 },
+  { shiftDate: '2026-07-11', count: 6 },
+  { shiftDate: '2026-07-12', count: 8 },
+]

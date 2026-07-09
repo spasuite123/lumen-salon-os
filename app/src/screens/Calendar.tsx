@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useApp } from '../lib/AppContext'
 import { getAppointments, getClients, getServices, getStaff, createAppointment, checkoutAppointment, refundAppointment, getOffers } from '../lib/data'
-import { money, initials, fmtTime } from '../lib/util'
+import { money, initials, fmtTime, isoDate } from '../lib/util'
 import { toast } from '../lib/toast'
 import { createPaymentIntent } from '../lib/integrations'
 
@@ -10,7 +10,6 @@ const DS = 10, DE = 22, STEP = 15
 const SLOTS_PER_HOUR = 60 / STEP
 const SH = 26 // px per slot row
 
-const isoDate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 const isBizDay = (d: Date) => d.getDay() !== 0 // closed Sundays
 const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n)
 /** Step to the next/prev day, skipping Sundays automatically. */

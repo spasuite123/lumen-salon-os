@@ -194,3 +194,229 @@ export async function refundAppointment(appt: { id: string }) {
   })
   return { ok: !error, error: error?.message, amount: sale.subtotal_cents }
 }
+
+// ---------------------------------------------------------------------------
+// SCHEDULER — staff availability, schedule rules, and shifts
+// ---------------------------------------------------------------------------
+
+const _isoDate = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
+const _addDays = (isoStr: string, n: number): string => {
+  const d = new Date(isoStr + 'T00:00:00')
+  d.setDate(d.getDate() + n)
+  return _isoDate(d)
+}
+
+export type RuleType = 'max_hours_week' | 'min_hours_week' | 'max_days_week' | 'min_days_week' | 'no_specific_days'
+
+export type StaffAvailabilityRow = {
+  id: string
+  staffId: string
+  dayOfWeek: number   // 0=Sun … 6=Sat
+  isAvailable: boolean
+  startMin: number | null   // null = store open hour
+  endMin: number | null     // null = store close hour
+}
+
+export type ScheduleRule = {
+  id: string
+  staffId: string
+  ruleType: RuleType
+  value: number
+}
+
+export type Shift = {
+  id: string
+  orgId: string
+  storeId: string
+  staffId: string
+  shiftDate: string   // 'YYYY-MM-DD'
+  startMin: number    // minutes from midnight
+  endMin: number
+  notes?: string
+}
+
+export async function getStaffAvailability(staffId: string): Promise<StaffAvailabilityRow[]> {
+  if (!isSupabaseConfigured)
+    return D(demo.STAFF_AVAILABILITY.filter((a: any) => a.staffId === staffId).map((a: any) => ({
+      id: a.id, staffId: a.staffId, dayOfWeek: a.dayOfWeek,
+      isAvailable: a.isAvailable, startMin: a.startMin, endMin: a.endMin,
+    })))
+  const { data } = await supabase
+    .from('staff_availability')
+    .select('id,staff_id,day_of_week,is_available,start_min,end_min')
+    .eq('staff_id', staffId)
+  return (data || []).map((r: any) => ({
+    id: r.id, staffId: r.staff_id, dayOfWeek: r.day_of_week,
+    isAvailable: r.is_available, startMin: r.start_min, endMin: r.end_min,
+  }))
+}
+
+export async function saveStaffAvailability(
+  staffId: string,
+  rows: Omit<StaffAvailabilityRow, 'id' | 'staffId'>[]
+) {
+  if (!isSupabaseConfigured) {
+    const keep = demo.STAFF_AVAILABILITY.filter((a: any) => a.staffId !== staffId)
+    const next = rows.map((r, i) => ({ ...r, id: 'av-' + Date.now() + i, staffId }))
+    demo.STAFF_AVAILABILITY.splice(0, Infinity, ...keep, ...next)
+    return { ok: true }
+  }
+  const org = await getOrgId()
+  const upserts = rows.map((r) => ({
+    org_id: org, staff_id: staffId, day_of_week: r.dayOfWeek,
+    is_available: r.isAvailable, start_min: r.startMin, end_min: r.endMin,
+  }))
+  const { error } = await supabase
+    .from('staff_availability')
+    .upsert(upserts, { onConflict: 'staff_id,day_of_week' })
+  return { ok: !error, error: error?.message }
+}
+
+export async function getStaffScheduleRules(staffId: string): Promise<ScheduleRule[]> {
+  if (!isSupabaseConfigured)
+    return D(demo.SCHEDULE_RULES.filter((r: any) => r.staffId === staffId).map((r: any) => ({
+      id: r.id, staffId: r.staffId, ruleType: r.ruleType, value: r.value,
+    })))
+  const { data } = await supabase
+    .from('staff_schedule_rules')
+    .select('id,staff_id,rule_type,value')
+    .eq('staff_id', staffId)
+  return (data || []).map((r: any) => ({
+    id: r.id, staffId: r.staff_id, ruleType: r.rule_type, value: r.value,
+  }))
+}
+
+export async function saveStaffScheduleRules(
+  staffId: string,
+  rules: Omit<ScheduleRule, 'id' | 'staffId'>[]
+) {
+  if (!isSupabaseConfigured) {
+    const keep = demo.SCHEDULE_RULES.filter((r: any) => r.staffId !== staffId)
+    const next = rules.map((r, i) => ({ ...r, id: 'rule-' + Date.now() + i, staffId }))
+    demo.SCHEDULE_RULES.splice(0, Infinity, ...keep, ...next)
+    return { ok: true }
+  }
+  const org = await getOrgId()
+  await supabase.from('staff_schedule_rules').delete().eq('staff_id', staffId)
+  if (!rules.length) return { ok: true }
+  const { error } = await supabase.from('staff_schedule_rules').insert(
+    rules.map((r) => ({ org_id: org, staff_id: staffId, rule_type: r.ruleType, value: r.value }))
+  )
+  return { ok: !error, error: error?.message }
+}
+
+export async function getShifts(weekStart: string, storeId: string): Promise<Shift[]> {
+  const weekEnd = _addDays(weekStart, 6)
+  if (!isSupabaseConfigured)
+    return D(demo.SHIFTS.filter((s: any) =>
+      s.storeId === storeId && s.shiftDate >= weekStart && s.shiftDate <= weekEnd
+    ).map((s: any) => ({
+      id: s.id, orgId: s.orgId, storeId: s.storeId, staffId: s.staffId,
+      shiftDate: s.shiftDate, startMin: s.startMin, endMin: s.endMin, notes: s.notes,
+    })))
+  const { data } = await supabase
+    .from('staff_shifts')
+    .select('id,org_id,store_id,staff_id,shift_date,start_min,end_min,notes')
+    .eq('store_id', storeId)
+    .gte('shift_date', weekStart)
+    .lte('shift_date', weekEnd)
+  return (data || []).map((r: any) => ({
+    id: r.id, orgId: r.org_id, storeId: r.store_id, staffId: r.staff_id,
+    shiftDate: r.shift_date, startMin: r.start_min, endMin: r.end_min, notes: r.notes,
+  }))
+}
+
+export async function saveShift(shift: Omit<Shift, 'id' | 'orgId'>): Promise<{ ok: boolean; id?: string; error?: string }> {
+  if (!isSupabaseConfigured) {
+    const id = 'sh' + Date.now()
+    demo.SHIFTS.push({ ...shift, id, orgId: 'demo' })
+    return { ok: true, id }
+  }
+  const org = await getOrgId()
+  const { data, error } = await supabase
+    .from('staff_shifts')
+    .insert({
+      org_id: org, store_id: shift.storeId, staff_id: shift.staffId,
+      shift_date: shift.shiftDate, start_min: shift.startMin, end_min: shift.endMin,
+      notes: shift.notes || null,
+    })
+    .select('id').single()
+  return { ok: !error, id: data?.id, error: error?.message }
+}
+
+export async function updateShift(id: string, patch: { startMin?: number; endMin?: number; notes?: string }) {
+  if (!isSupabaseConfigured) {
+    const s = demo.SHIFTS.find((x: any) => x.id === id)
+    if (s) Object.assign(s, {
+      startMin: patch.startMin ?? s.startMin,
+      endMin: patch.endMin ?? s.endMin,
+      notes: patch.notes ?? s.notes,
+    })
+    return { ok: true }
+  }
+  const updates: any = {}
+  if (patch.startMin !== undefined) updates.start_min = patch.startMin
+  if (patch.endMin !== undefined) updates.end_min = patch.endMin
+  if (patch.notes !== undefined) updates.notes = patch.notes || null
+  const { error } = await supabase.from('staff_shifts').update(updates).eq('id', id)
+  return { ok: !error, error: error?.message }
+}
+
+export async function deleteShift(id: string) {
+  if (!isSupabaseConfigured) {
+    const i = demo.SHIFTS.findIndex((x: any) => x.id === id)
+    if (i >= 0) demo.SHIFTS.splice(i, 1)
+    return { ok: true }
+  }
+  const { error } = await supabase.from('staff_shifts').delete().eq('id', id)
+  return { ok: !error, error: error?.message }
+}
+
+export async function getApptCountsForWeek(weekStart: string, storeId: string): Promise<{
+  perStaff: Record<string, number>  // key: `${staffId}_${date}` → count
+  perDay: Record<string, number>    // key: ISO date → total count
+}> {
+  const weekEnd = _addDays(weekStart, 6)
+  if (!isSupabaseConfigured) {
+    const perStaff: Record<string, number> = {}
+    demo.APPT_COUNTS_DEMO.forEach((a) => { perStaff[a.staffId + '_' + a.shiftDate] = a.count })
+    const perDay: Record<string, number> = {}
+    demo.DAY_VOLUMES_DEMO.forEach((d) => { perDay[d.shiftDate] = d.count })
+    return D({ perStaff, perDay })
+  }
+  const { data } = await supabase
+    .from('appointments')
+    .select('staff_id,starts_at')
+    .eq('store_id', storeId)
+    .gte('starts_at', weekStart + 'T00:00:00')
+    .lte('starts_at', weekEnd + 'T23:59:59')
+    .not('status', 'in', '("canceled","no_show")')
+  const perStaff: Record<string, number> = {}
+  const perDay: Record<string, number> = {}
+  for (const a of (data || [])) {
+    const date = (a.starts_at as string).slice(0, 10)
+    const key = a.staff_id + '_' + date
+    perStaff[key] = (perStaff[key] || 0) + 1
+    perDay[date] = (perDay[date] || 0) + 1
+  }
+  return { perStaff, perDay }
+}
+
+export async function getTimeOffForWeek(weekStart: string, staffIds: string[]) {
+  const weekEnd = _addDays(weekStart, 6)
+  if (!isSupabaseConfigured)
+    return D(demo.TIME_OFF_DEMO.filter((t: any) =>
+      staffIds.includes(t.staffId) && t.startDate <= weekEnd && t.endDate >= weekStart
+    ))
+  const { data } = await supabase
+    .from('time_off')
+    .select('id,staff_id,start_date,end_date,reason')
+    .in('staff_id', staffIds)
+    .lte('start_date', weekEnd)
+    .gte('end_date', weekStart)
+  return (data || []).map((r: any) => ({
+    id: r.id, staffId: r.staff_id, startDate: r.start_date, endDate: r.end_date, reason: r.reason,
+  }))
+}

@@ -5,6 +5,7 @@ import AppLauncher from './components/AppLauncher'
 import Login from './components/Login'
 import Dashboard from './screens/Dashboard'
 import Calendar from './screens/Calendar'
+import Scheduler from './screens/Scheduler'
 import Clients from './screens/Clients'
 import ListScreen from './screens/ListScreen'
 import { Sales, Reports, Inbox, Settings, Scaffold } from './screens/Misc'
@@ -61,6 +62,7 @@ export default function App() {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/calendar" element={<Calendar />} />
+          <Route path="/schedule" element={<Scheduler />} />
           <Route path="/clients" element={<Clients />} />
           <Route path="/sales" element={<Sales />} />
           <Route path="/reports" element={<Reports />} />
