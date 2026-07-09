@@ -23,7 +23,7 @@ export function PublicBooking() {
   }) }, [slug])
 
   if (!opts) return <div className="login-wrap"><div style={{ color: 'var(--muted)' }}>Loading…</div></div>
-  if (!opts.enabled) return <div className="login-wrap"><div className="login-card"><div className="logo">L</div><h1 style={{ fontSize: 20, textAlign: 'center' }}>Online booking isn't available</h1><p style={{ textAlign: 'center', color: 'var(--muted)', marginTop: 8 }}>This salon hasn't turned on online booking yet.</p></div></div>
+  if (!opts.enabled) return <div className="login-wrap"><div className="login-card"><div className="logo">S</div><h1 style={{ fontSize: 20, textAlign: 'center' }}>Online booking isn't available</h1><p style={{ textAlign: 'center', color: 'var(--muted)', marginTop: 8 }}>This spa hasn't turned on online booking yet.</p></div></div>
 
   const submit = async () => {
     if (!name || !phone) { toast('Name and phone are required'); return }

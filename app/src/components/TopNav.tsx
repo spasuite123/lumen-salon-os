@@ -14,7 +14,7 @@ export default function TopNav({ onOpenLauncher }: { onOpenLauncher: () => void 
 
   return (
     <header className="topnav">
-      <div className="logo" title="Home" onClick={() => nav('/dashboard')}>L</div>
+      <div className="logo" title="Home" onClick={() => nav('/dashboard')}>S</div>
       <div className="nav-row">
         {NAV.map((id) => {
           const a = APPS.find((x) => x.id === id)!

@@ -17,10 +17,10 @@ export default function Login() {
   return (
     <div className="login-wrap">
       <div className="login-card">
-        <div className="logo">L</div>
+        <div className="logo">S</div>
         <h1 style={{ fontSize: 22, textAlign: 'center', marginBottom: 4 }}>Welcome back</h1>
-        <p style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 13, marginBottom: 22 }}>Sign in to Lumen Salon OS</p>
-        <div className="field"><label>Email</label><input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@salon.co" onKeyDown={(e) => e.key === 'Enter' && submit()} /></div>
+        <p style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 13, marginBottom: 22 }}>Sign in to SpaSuite</p>
+        <div className="field"><label>Email</label><input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@spa.com" onKeyDown={(e) => e.key === 'Enter' && submit()} /></div>
         <div className="field"><label>Password</label><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && submit()} /></div>
         {err && <div style={{ color: 'var(--rose)', fontSize: 12.5, marginBottom: 12 }}>{err}</div>}
         <button className="btn" style={{ width: '100%', justifyContent: 'center', padding: 12 }} onClick={submit} disabled={busy}>

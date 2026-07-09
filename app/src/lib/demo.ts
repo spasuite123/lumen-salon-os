@@ -51,10 +51,12 @@ export const APPTS = [
 ]
 
 export const PRODUCTS = [
-  { name: 'Argan Oil Treatment', sku: 'AO-01', price: 2800, cost: 1200, stock: 11 },
-  { name: 'Styling Cream', sku: 'SC-01', price: 2200, cost: 800, stock: 6 },
-  { name: 'Hydrating Serum', sku: 'HS-02', price: 4600, cost: 1900, stock: 2 },
-  { name: 'Detangling Brush', sku: 'DB-03', price: 1800, cost: 600, stock: 14 },
+  { name: 'Vitamin C Brightening Serum', sku: 'VC-01', price: 5800, cost: 2100, stock: 9 },
+  { name: 'Lavender Body Oil', sku: 'LB-01', price: 3400, cost: 1200, stock: 14 },
+  { name: 'Rose Hydration Face Mist', sku: 'RH-02', price: 2800, cost: 900, stock: 7 },
+  { name: 'Deep Moisture Eye Cream', sku: 'DM-03', price: 6200, cost: 2400, stock: 5 },
+  { name: 'Exfoliating Sugar Scrub', sku: 'ES-04', price: 3200, cost: 1100, stock: 11 },
+  { name: 'Aromatherapy Candle', sku: 'AC-05', price: 2200, cost: 700, stock: 18 },
 ]
 
 export const GIFTCARDS = [

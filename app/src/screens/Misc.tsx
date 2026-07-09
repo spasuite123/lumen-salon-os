@@ -158,8 +158,8 @@ export function Settings() {
   )
   let body: any
   if (page === 'Business Details') body = <>
-    <div className="field"><label>Business name</label><input defaultValue="Lumen Beauty Co." /></div>
-    <div className="field"><label>Support email</label><input defaultValue="hello@lumenbeauty.co" /></div>
+    <div className="field"><label>Business name</label><input defaultValue="SpaSuite Demo" /></div>
+    <div className="field"><label>Support email</label><input defaultValue="hello@spasuite.co" /></div>
     <div className="field"><label>Time zone</label><select defaultValue="MST"><option value="MST">America/Denver (MST)</option><option>America/Los_Angeles</option></select></div>
   </>
   else if (page === 'Business Hours') body = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((d, i) => (
@@ -168,7 +168,7 @@ export function Settings() {
   else if (section === 'Automated Messages') body = <>
     {tog('Enabled', 'Send this message automatically', true)}
     <div className="field" style={{ marginTop: 18 }}><label>Channel</label><select><option>Email + SMS</option><option>Email only</option><option>SMS only</option></select></div>
-    <div className="field"><label>Message template</label><textarea rows={5} defaultValue={'Hi {client_name}! This confirms your {service} on {date} at {time} at {location}. Reply C to confirm. — Lumen'} /></div>
+    <div className="field"><label>Message template</label><textarea rows={5} defaultValue={'Hi {client_name}! This confirms your {service} on {date} at {time} at {location}. Reply C to confirm. — SpaSuite'} /></div>
   </>
   else body = [tog('Setting one', 'A representative toggle for this page'), tog('Setting two', 'Another configurable option', false)]
   return (
