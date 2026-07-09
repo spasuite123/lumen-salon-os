@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import TopNav from './components/TopNav'
 import AppLauncher from './components/AppLauncher'
 import Login from './components/Login'
+import Onboarding from './screens/Onboarding'
 import Dashboard from './screens/Dashboard'
 import Calendar from './screens/Calendar'
 import Scheduler from './screens/Scheduler'
@@ -47,6 +48,8 @@ export default function App() {
   if (isSupabaseConfigured) {
     if (session === undefined) return <div className="login-wrap"><div style={{ color: 'var(--muted)' }}>Loading…</div></div>
     if (!session) return <Login />
+    // New user: route through onboarding wizard before entering the app
+    if (!session.user?.user_metadata?.onboarding_complete) return <Onboarding session={session} />
   }
 
   return (
@@ -56,7 +59,7 @@ export default function App() {
           <b>Demo mode</b> — running on local sample data. Add your Supabase keys in <b>.env</b> to go live.
         </div>
       )}
-      <TopNav onOpenLauncher={() => setLauncher(true)} />
+      <TopNav onOpenLauncher={() => setLauncher(true)} session={session} />
       <div className="content">
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
