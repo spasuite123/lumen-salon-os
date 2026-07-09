@@ -1,9 +1,15 @@
 import { useEffect, useState } from 'react'
+import { loadStripe } from '@stripe/stripe-js'
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { useApp } from '../lib/AppContext'
 import { getAppointments, getClients, getServices, getStaff, createAppointment, checkoutAppointment, refundAppointment, getOffers } from '../lib/data'
 import { money, initials, fmtTime, isoDate } from '../lib/util'
 import { toast } from '../lib/toast'
 import { createPaymentIntent } from '../lib/integrations'
+
+const stripePromise = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
+  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
+  : null
 
 // Business hours: Mon–Sat, 10am–10pm, booked in 15-minute increments.
 const DS = 10, DE = 22, STEP = 15
@@ -188,9 +194,23 @@ function BookingDrawer({ loc, clients, services, staff, pre, dateISO, dateLabel,
 }
 
 function CheckoutDrawer({ d, priceCents, onClose, onDone }: any) {
+  return (
+    <>
+      <div className="scrim" onClick={onClose} />
+      <Elements stripe={stripePromise}>
+        <CheckoutInner d={d} priceCents={priceCents} onClose={onClose} onDone={onDone} />
+      </Elements>
+    </>
+  )
+}
+
+function CheckoutInner({ d, priceCents, onClose, onDone }: any) {
+  const stripe = useStripe()
+  const elements = useElements()
   const { appt, sv, cl, st } = d
   const [tip, setTip] = useState(0)
   const [busy, setBusy] = useState(false)
+  const [cardError, setCardError] = useState('')
   const [offers, setOffers] = useState<any[]>([])
   const [offerId, setOfferId] = useState('')
   const [method, setMethod] = useState('card')
@@ -205,7 +225,22 @@ function CheckoutDrawer({ d, priceCents, onClose, onDone }: any) {
 
   const charge = async () => {
     setBusy(true)
-    if (method === 'reader') await createPaymentIntent(total, 'terminal') // no-op in simulate; collects on reader when Stripe is live
+    setCardError('')
+
+    if (method === 'card' && stripe && elements) {
+      const piRes = await createPaymentIntent(total, 'online')
+      if (piRes.ok && !piRes.simulated) {
+        const card = elements.getElement(CardElement) as any
+        if (!card) { setBusy(false); return }
+        const { error } = await stripe.confirmCardPayment(piRes.client_secret, {
+          payment_method: { card },
+        })
+        if (error) { setCardError(error.message || 'Card declined'); setBusy(false); return }
+      }
+    } else if (method === 'reader') {
+      await createPaymentIntent(total, 'terminal')
+    }
+
     const res = await checkoutAppointment(
       { id: appt.id, storeId: appt.locId, clientId: appt.clientId, staffId: appt.staffId, serviceId: appt.svcId, serviceName: sv.name, priceCents },
       tipCents, offer ? { id: offer.id, kind: offer.kind, value: offer.value } : null, method,
@@ -225,48 +260,54 @@ function CheckoutDrawer({ d, priceCents, onClose, onDone }: any) {
   }
 
   return (
-    <>
-      <div className="scrim" onClick={onClose} />
-      <aside className="drawer">
-        <div className="dr-head">
-          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-            <span className="chip" style={{ background: cl.color, width: 44, height: 44, borderRadius: '50%', fontSize: 15, margin: 0 }}>{initials(cl.name)}</span>
-            <div><div style={{ fontWeight: 600, fontSize: 16, fontFamily: 'Bricolage Grotesque' }}>{cl.name}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{cl.phone}</div></div>
+    <aside className="drawer">
+      <div className="dr-head">
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <span className="chip" style={{ background: cl.color, width: 44, height: 44, borderRadius: '50%', fontSize: 15, margin: 0 }}>{initials(cl.name)}</span>
+          <div><div style={{ fontWeight: 600, fontSize: 16, fontFamily: 'Bricolage Grotesque' }}>{cl.name}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{cl.phone}</div></div>
+        </div>
+        <button className="x-btn" onClick={onClose}>✕</button>
+      </div>
+      <div className="dr-body">
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+          <span className="tag gray">{fmtTime(appt.h, appt.m)}</span>
+          <span className={'tag ' + (paid ? 'green' : 'amber')}>{paid ? 'Paid' : 'Open ticket'}</span>
+        </div>
+        <div className="line-item"><div><div style={{ fontWeight: 600 }}>{sv.name}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{sv.dur} min · {st.name}</div></div><div style={{ fontWeight: 600 }}>{money(priceCents)}</div></div>
+        {!paid && <>
+          <div className="field" style={{ marginTop: 16, marginBottom: 6 }}><label>Apply offer</label>
+            <select value={offerId} onChange={(e) => setOfferId(e.target.value)}>
+              <option value="">No offer</option>
+              {offers.map((o) => <option key={o.id} value={o.id}>{o.name}{o.code ? ' (' + o.code + ')' : ''} · {o.type}</option>)}
+            </select>
           </div>
-          <button className="x-btn" onClick={onClose}>✕</button>
-        </div>
-        <div className="dr-body">
-          <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-            <span className="tag gray">{fmtTime(appt.h, appt.m)}</span>
-            <span className={'tag ' + (paid ? 'green' : 'amber')}>{paid ? 'Paid' : 'Open ticket'}</span>
+          {discount > 0 && <div className="line-item" style={{ color: 'var(--mint-700)' }}><div>Discount{offer?.code ? ' · ' + offer.code : ''}</div><div>-{money(discount)}</div></div>}
+          <div style={{ marginTop: 16, fontSize: 12, fontWeight: 600, color: 'var(--muted)' }}>ADD TIP</div>
+          <div className="tip-row">{[0, 18, 20, 25].map((p) => <button key={p} className={'tip-btn' + (tip === p ? ' on' : '')} onClick={() => setTip(p)}>{p === 0 ? 'None' : p + '%'}</button>)}</div>
+          <div className="total-row"><span style={{ fontWeight: 600 }}>Total due</span><span className="tv num">{money(total)}</span></div>
+          <div className="field" style={{ marginTop: 14 }}><label>Payment method</label>
+            <select value={method} onChange={(e) => { setMethod(e.target.value); setCardError('') }}>
+              <option value="card">Card (enter now)</option>
+              <option value="cash">Cash</option>
+              <option value="reader">Card on reader (Stripe Terminal)</option>
+            </select>
           </div>
-          <div className="line-item"><div><div style={{ fontWeight: 600 }}>{sv.name}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{sv.dur} min · {st.name}</div></div><div style={{ fontWeight: 600 }}>{money(priceCents)}</div></div>
-          {!paid && <>
-            <div className="field" style={{ marginTop: 16, marginBottom: 6 }}><label>Apply offer</label>
-              <select value={offerId} onChange={(e) => setOfferId(e.target.value)}>
-                <option value="">No offer</option>
-                {offers.map((o) => <option key={o.id} value={o.id}>{o.name}{o.code ? ' (' + o.code + ')' : ''} · {o.type}</option>)}
-              </select>
+          {method === 'card' && (
+            <div className="field" style={{ marginBottom: 0 }}>
+              <label>Card details</label>
+              <div style={{ border: '1px solid var(--line)', borderRadius: 9, padding: '12px 14px', background: 'var(--surface-2)' }}>
+                <CardElement options={{ style: { base: { fontSize: '14px', fontFamily: 'Inter, system-ui, sans-serif', color: '#1a2e26', '::placeholder': { color: '#aab2bb' } }, invalid: { color: '#d9657a' } } }} onChange={() => setCardError('')} />
+              </div>
+              {cardError && <div style={{ fontSize: 12, color: 'var(--rose)', marginTop: 6 }}>{cardError}</div>}
             </div>
-            {discount > 0 && <div className="line-item" style={{ color: 'var(--mint-700)' }}><div>Discount{offer?.code ? ' · ' + offer.code : ''}</div><div>-{money(discount)}</div></div>}
-            <div style={{ marginTop: 16, fontSize: 12, fontWeight: 600, color: 'var(--muted)' }}>ADD TIP</div>
-            <div className="tip-row">{[0, 18, 20, 25].map((p) => <button key={p} className={'tip-btn' + (tip === p ? ' on' : '')} onClick={() => setTip(p)}>{p === 0 ? 'None' : p + '%'}</button>)}</div>
-            <div className="total-row"><span style={{ fontWeight: 600 }}>Total due</span><span className="tv num">{money(total)}</span></div>
-            <div className="field" style={{ marginTop: 14, marginBottom: 0 }}><label>Payment method</label>
-              <select value={method} onChange={(e) => setMethod(e.target.value)}>
-                <option value="card">Card (manual)</option>
-                <option value="cash">Cash</option>
-                <option value="reader">Card on reader (Stripe Terminal)</option>
-              </select>
-            </div>
-          </>}
-        </div>
-        <div className="dr-foot">
-          {paid
-            ? <><button className="btn ghost" onClick={refund} disabled={busy} style={{ color: 'var(--rose)' }}>{busy ? '…' : 'Refund'}</button><button className="btn ghost" onClick={onClose}>Close</button></>
-            : <><button className="btn ghost" onClick={onClose}>Cancel</button><button className="btn" onClick={charge} disabled={busy}>{busy ? 'Charging…' : 'Charge ' + money(total)}</button></>}
-        </div>
-      </aside>
-    </>
+          )}
+        </>}
+      </div>
+      <div className="dr-foot">
+        {paid
+          ? <><button className="btn ghost" onClick={refund} disabled={busy} style={{ color: 'var(--rose)' }}>{busy ? '…' : 'Refund'}</button><button className="btn ghost" onClick={onClose}>Close</button></>
+          : <><button className="btn ghost" onClick={onClose}>Cancel</button><button className="btn" onClick={charge} disabled={busy}>{busy ? 'Charging…' : 'Charge ' + money(total)}</button></>}
+      </div>
+    </aside>
   )
 }
